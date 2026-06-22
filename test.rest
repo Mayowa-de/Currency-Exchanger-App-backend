@@ -1,0 +1,5 @@
+### Get Currencies Rate
+GET https://api.frankfurter.app/latest?base=USD&symbols=EUR,GBP
+
+#### Get Currencies Rate
+GET http://localhost:3000/localhost:3000/latest?from=USD
