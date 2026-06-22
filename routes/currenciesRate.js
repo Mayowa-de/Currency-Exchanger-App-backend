@@ -5,7 +5,7 @@ const app = express()
 
 const router = express.Router();
 
-router.get('/', getCurrenciesRate); 
+router.get('/api', getCurrenciesRate); 
 
 
 module.exports = router;

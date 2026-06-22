@@ -17,7 +17,7 @@ app.use(cors(corsOptions()));
 app.use(express.json());
 
 
-app.use(currenciesRoute);
+app.use( currenciesRoute);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

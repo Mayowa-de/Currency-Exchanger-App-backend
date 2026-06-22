@@ -1,42 +1,40 @@
 const axios = require("axios");
-const getCurrenciesRate = async ({ res, req }) => {
+const getCurrenciesRate = async (req, res) => {
   try {
     const { base = "USD" } = req.query;
 
     const todayResponse = await axios.get(
-      `https://api.frankfurter.app/latest?from=${base}`,
+      `https://api.frankfurter.app/latest?base=${base}`,
     );
-    const todayRates =await todayResponse.json();
+    const todayRates = todayResponse.data;
 
-    // const nameRes = await axios.get(`https://api.frankfurter.app/currencies`);
-    // const currencyNames = nameRes.data;
+    // Get yesterday's date for historical rates
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterdayDateString = yesterdayDate.toISOString().split('T')[0];
 
-    const yesterdayResponse = await fetch(`https://frankfurter.app/latest?from={base}`);
-    const yesterdayRates = await yesterdayResponse.json();
+    const yesterdayResponse = await axios.get(`https://api.frankfurter.app/${yesterdayDateString}?base=${base}`);
+    const yesterdayRates = yesterdayResponse.data;
 
-    const yesterdayDate = new Date()
-        .setDate(new Date().getDate() - 1);
-    const yesterdayDateString = new Date(yesterdayDate).toISOString().split('T')[0];
-    const yesterdayRate = yesterdayRates.rates[yesterdayDateString] || null;
-
-    const { date, rates } = todayRates;
-    const symbols = Object.keys(rates).join(",");
-    const currencyNames = await axios.get(`https://api.frankfurter.app/currencies`).then(res => res.data);
-
+    const rates = todayRates.rates;
+    const yesterdayRateValue = yesterdayRates.rates[base] || 1;
+    const todayRateValue = todayRates.rates[base] || 1;
+    
+    const percentageChange = ((todayRateValue - yesterdayRateValue) / yesterdayRateValue) * 100;
+    
     const currencies = Object.keys(rates).map((code) => ({
       code,
-      name: currencyNames[code] || "Unknown Currency",
       rate: rates[code],
     }));
     res.status(200).json({
-      date,
+      rate: todayRateValue,
       base,
-      direction: `${base} to ${symbols}`,
-      symbolsRate: rates[symbols] || null,
+      direction: percentageChange > 0 ? "up" : percentageChange < 0 ? "down" : "no change",
+      percentageChange: percentageChange.toFixed(4),
       currencies,
     });
   } catch (error) {
-    console.error("Error fetching currency rates:", error.message);
+    console.error("Error fetching currency rates:", error.response?.data || error.message);
     res.status(500).json({ error: "Failed to fetch currency rates" });
   }
 };
