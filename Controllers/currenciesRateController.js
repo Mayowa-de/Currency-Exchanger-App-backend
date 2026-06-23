@@ -1,10 +1,11 @@
 const axios = require("axios");
 const getCurrenciesRate = async (req, res) => {
   try {
-    const { base = "USD" } = req.query;
+    const { base = "USD", symbols } = req.query;
+    const symbolsParam = symbols ? `&symbols=${symbols}` : "";
 
     const todayResponse = await axios.get(
-      `https://api.frankfurter.app/latest?base=${base}`
+      `https://api.frankfurter.app/latest?base=${base}${symbolsParam}`
     );
     const todayRates = todayResponse.data;
 
@@ -13,24 +14,39 @@ const getCurrenciesRate = async (req, res) => {
     yesterdayDate.setDate(yesterdayDate.getDate() - 1);
     const yesterdayDateString = yesterdayDate.toISOString().split('T')[0];
 
-    const yesterdayResponse = await axios.get(`https://api.frankfurter.app/${yesterdayDateString}?base=${base}`);
+    const yesterdayResponse = await axios.get(
+      `https://api.frankfurter.app/${yesterdayDateString}?base=${base}${symbolsParam}`
+    );
     const yesterdayRates = yesterdayResponse.data;
 
     const rates = todayRates.rates;
-    const yesterdayRateValue = yesterdayRates.rates[base] || 1;
-    const todayRateValue = todayRates.rates[base] || 1;
-    
-    const percentageChange = ((todayRateValue - yesterdayRateValue) / yesterdayRateValue) * 100;
-    
-    const currencies = Object.keys(rates).map((code) => ({
-      code,
-      rate: rates[code],
-    }));
+    const symbolKeys = Object.keys(rates);
+    const primarySymbol = symbolKeys[0];
+    const todayRateValue = primarySymbol ? rates[primarySymbol] : null;
+    const yesterdayRateValue = primarySymbol ? yesterdayRates.rates[primarySymbol] : null;
+
+    const percentageChange = yesterdayRateValue
+      ? ((todayRateValue - yesterdayRateValue) / yesterdayRateValue) * 100
+      : 0;
+
+    const currencies = symbolKeys.map((code) => {
+      const currentRate = rates[code];
+      const previousRate = yesterdayRates.rates[code];
+      const change = previousRate
+        ? ((currentRate - previousRate) / previousRate) * 100
+        : null;
+
+      return {
+        code,
+        rate: currentRate,
+        percentageChange: change === null ? null : Number(change.toFixed(4)),
+      };
+    });
     res.status(200).json({
       rate: todayRateValue,
       base,
       direction: percentageChange > 0 ? "up" : percentageChange < 0 ? "down" : "no change",
-      percentageChange: percentageChange.toFixed(4),
+      percentageChange: Number(percentageChange.toFixed(4)),
       currencies,
     });
   } catch (error) {
