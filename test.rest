@@ -2,4 +2,4 @@
 GET https://api.frankfurter.app/latest?base=USD
 
 #### Get Currencies Rate
-GET http://localhost:3000/api/latest?base=USD
+GET http://localhost:3000/api?base=USD&percentageChange

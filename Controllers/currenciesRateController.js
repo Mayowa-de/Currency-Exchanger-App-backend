@@ -4,7 +4,7 @@ const getCurrenciesRate = async (req, res) => {
     const { base = "USD" } = req.query;
 
     const todayResponse = await axios.get(
-      `https://api.frankfurter.app/latest?base=${base}`,
+      `https://api.frankfurter.app/latest?base=${base}`
     );
     const todayRates = todayResponse.data;
 
