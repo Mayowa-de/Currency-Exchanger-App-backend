@@ -5,14 +5,14 @@ const getCurrenciesRate = async (req, res) => {
     const { base = "USD", symbols } = req.query;
     const symbolsParam = symbols ? `&symbols=${symbols}` : "";
 
-    // Step 1: Get latest rates
+    //  Get latest rates
     const todayResponse = await axios.get(
       `https://api.frankfurter.app/latest?base=${base}${symbolsParam}`
     );
     const todayRates = todayResponse.data;
     const latestDate = todayRates.date;
 
-    // Step 2: Fetch a 3-day range to capture the previous business day
+    //  Fetch a 3-day range to capture the previous business day
     const startDate = new Date(latestDate);
     startDate.setDate(startDate.getDate() - 3);
     const startDateStr = startDate.toISOString().split("T")[0];
@@ -23,11 +23,8 @@ const getCurrenciesRate = async (req, res) => {
 
     const rangeDates = Object.keys(rangeResponse.data.rates).sort();
 
-    // Debug: add these temporarily to verify dates
-    console.log("Latest date:", latestDate);
-    console.log("Range dates:", rangeDates);
 
-    // Guard: need at least 2 dates to calculate change
+    //  need at least 2 dates to calculate change
     if (rangeDates.length < 2) {
       return res.status(200).json({
         rate: null,
