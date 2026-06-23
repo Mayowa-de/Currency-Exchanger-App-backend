@@ -1,24 +1,36 @@
 const axios = require("axios");
 const getCurrenciesRate = async (req, res) => {
+  const getCurrenciesRate = async (req, res) => {
   try {
     const { base = "USD", symbols } = req.query;
     const symbolsParam = symbols ? `&symbols=${symbols}` : "";
 
+    // Step 1: Get today's (latest available) rates
     const todayResponse = await axios.get(
       `https://api.frankfurter.app/latest?base=${base}${symbolsParam}`
     );
     const todayRates = todayResponse.data;
+    const latestDate = new Date(todayRates.date); // e.g. "2026-06-23"
 
-    // Get yesterday's date for historical rates
-    const yesterdayDate = new Date();
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterdayDateString = yesterdayDate.toISOString().split('T')[0];
+    // Step 2: Go back far enough to find the PREVIOUS business day's rates
+    // Go back 3 days to safely skip weekends
+    const prevDate = new Date(latestDate);
+    prevDate.setDate(prevDate.getDate() - 3);
+    const prevDateString = prevDate.toISOString().split("T")[0];
 
-    const yesterdayResponse = await axios.get(
-      `https://api.frankfurter.app/${yesterdayDateString}?base=${base}${symbolsParam}`
+    // Step 3: Fetch a date range — Frankfurter will return business days in between
+    // The first entry will be the business day just before latestDate
+    const rangeResponse = await axios.get(
+      `https://api.frankfurter.app/${prevDateString}..${todayRates.date}?base=${base}${symbolsParam}`
     );
-    const yesterdayRates = yesterdayResponse.data;
-
+    const rangeDates = Object.keys(rangeResponse.data.rates).sort();
+    
+    // The second-to-last date is the previous business day
+    const previousBusinessDay = rangeDates[rangeDates.length - 2];
+    const yesterdayRates = {
+      rates: rangeResponse.data.rates[previousBusinessDay],
+    };
+    // ...rest of your logic unchanged
     const rates = todayRates.rates;
     const symbolKeys = Object.keys(rates);
     const primarySymbol = symbolKeys[0];
