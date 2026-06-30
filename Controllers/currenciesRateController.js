@@ -36,9 +36,9 @@ const getCurrenciesRate = async (req, res) => {
     }
 
     const previousDate = rangeDates[rangeDates.length - 2];
-    const previousRates = rangeResponse.data.rates[previousDate];
+    const previousRates = {[base]: 1, ...rangeResponse.data.rates[previousDate]};
 
-    const rates = [todayRates.rates, ...todayRates.rates];
+    const rates = {[base]: 1, ...todayRates.rates};
     const symbolKeys = Object.keys(rates);
     const primarySymbol = symbolKeys[0];
     const todayRateValue = primarySymbol ? rates[primarySymbol] : null;
